@@ -6,6 +6,10 @@
         Add New Product
       </button>
 
+      <div v-if="loading" class="fixed inset-0 flex items-center justify-center bg-transparent z-50">
+        <div class="loader"></div>
+      </div>
+
       <div v-if="products.length > 0" class="mt-6">
         <table class="w-full border-collapse border border-gray-300">
           <thead class="bg-gray-200">
@@ -80,6 +84,7 @@
         showModal: false,
         isEditing: false,
         currentProductId: null,
+        loading: false,
         form: {
           name: '',
           description: '',
@@ -93,12 +98,14 @@
     },
     methods: {
       async fetchProducts() {
+        this.loading = true;
         try {
           const response = await axios.get('/api/products');
           this.products = response.data.data;
         } catch (error) {
           console.error('Error fetching products:', error);
         }
+        this.loading = false;
       },
       openCreateModal() {
         this.form = { name: '', description: '', price: null, stock: null };
@@ -116,6 +123,7 @@
         this.showModal = false;
       },
       async saveProduct() {
+        this.loading = true;
         try {
           if (this.isEditing) {
             await axios.put(`/api/products/${this.currentProductId}`, this.form);
@@ -130,9 +138,11 @@
           console.error('Error saving product:', error.response ? error.response.data : error);
           this.$emit('notify', { type: 'error', message: 'Failed to save product.' });
         }
+        this.loading = false;
       },
       async deleteProduct(id) {
         if (confirm('Are you sure you want to delete this product?')) {
+          this.loading = true;
           try {
             await axios.delete(`/api/products/${id}`);
             this.fetchProducts();
@@ -141,6 +151,7 @@
             console.error('Error deleting product:', error);
             this.$emit('notify', { type: 'error', message: 'Failed to delete product.' });
           }
+          this.loading = false;
         }
       },
       formatPrice(price) {
@@ -210,5 +221,19 @@
     padding: 8px 12px;
     margin-right: 5px;
     cursor: pointer;
+  }
+
+  .loader {
+    border: 4px solid rgba(255, 255, 255, 0.3); /* Faint outer ring */
+    border-radius: 50%;
+    border-top: 4px solid #3498db; /* Visible spinning top */
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
   </style>
